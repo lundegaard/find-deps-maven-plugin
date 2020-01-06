@@ -29,7 +29,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
@@ -39,7 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -48,7 +46,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Mojo(
         name = "find-deps",
         requiresDependencyResolution = ResolutionScope.TEST)
-@Execute(goal = "")
 public class FindDepsMojo extends AbstractMojo {
 
     private static final String ENCODING_UTF8 = "UTF-8";

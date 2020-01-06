@@ -38,6 +38,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${mavenVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>${mavenVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
             <version>${mavenVersion}</version>
         </dependency>
@@ -48,24 +58,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-artifact</artifactId>
-            <version>${mavenVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-model</artifactId>
-            <version>${mavenVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-core</artifactId>
-            <version>${mavenVersion}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-repository-metadata</artifactId>
-            <version>${mavenVersion}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
         </dependency>
     </dependencies>
 
@@ -189,16 +184,16 @@
                             <includes>**/module-info.properties</includes>
                         </configuration>
                     </execution>
-                    <!--<execution>-->
-                    <!--    <id>analyze-dependencies</id>-->
-                    <!--    <phase>verify</phase>-->
-                    <!--    <goals>-->
-                    <!--        <goal>analyze-only</goal>-->
-                    <!--    </goals>-->
-                    <!--    <configuration>-->
-                    <!--        <failOnWarning>true</failOnWarning>-->
-                    <!--    </configuration>-->
-                    <!--</execution>-->
+                    <execution>
+                        <id>analyze-dependencies</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -409,7 +404,7 @@
         </license>
     </licenses>
 
-    <inceptionYear>2018</inceptionYear>
+    <inceptionYear>2019</inceptionYear>
 
     <developers>
         <developer>
@@ -422,9 +417,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/lundegaard/selective-build-maven-plugin.git</connection>
-        <developerConnection>scm:git:ssh://github.com:lundegaard/selective-build-maven-plugin.git</developerConnection>
-        <url>https://github.com/lundegaard/selective-build-maven-plugin/tree/master</url>
+        <connection>scm:git:git://github.com/lundegaard/find-deps-maven-plugin.git</connection>
+        <developerConnection>scm:git:ssh://github.com:lundegaard/find-deps-maven-plugin.git</developerConnection>
+        <url>https://github.com/lundegaard/find-deps-maven-plugin/tree/master</url>
     </scm>
 
     <distributionManagement>
