@@ -102,7 +102,10 @@ public class FindDepsMojo extends AbstractMojo {
     private List<Plugin> gatherBuildPlugins(List<MavenProject> projects) {
         return projects.stream()
                 .flatMap(p -> p.getBuildPlugins().stream())
-                .distinct()
+                .filter(distinctByKey(p -> String.join(":", p.getGroupId(), p.getArtifactId(), p.getVersion())))
+                .sorted(Comparator.comparing(Plugin::getGroupId)
+                        .thenComparing(Plugin::getArtifactId)
+                        .thenComparing(Plugin::getVersion))
                 .collect(Collectors.toList());
     }
 
