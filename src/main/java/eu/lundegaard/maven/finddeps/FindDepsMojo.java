@@ -58,12 +58,6 @@ public class FindDepsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
-    /**
-     * Contains the full list of projects in the reactor.
-     */
-    @Parameter(defaultValue = "${reactorProjects}", readonly = true, required = true)
-    private List<MavenProject> reactorProjects;
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
@@ -102,7 +96,10 @@ public class FindDepsMojo extends AbstractMojo {
     private List<Plugin> gatherBuildPlugins(List<MavenProject> projects) {
         return projects.stream()
                 .flatMap(p -> p.getBuildPlugins().stream())
-                .distinct()
+                .filter(distinctByKey(p -> String.join(":", p.getGroupId(), p.getArtifactId(), p.getVersion())))
+                .sorted(Comparator.comparing(Plugin::getGroupId)
+                        .thenComparing(Plugin::getArtifactId)
+                        .thenComparing(Plugin::getVersion))
                 .collect(Collectors.toList());
     }
 

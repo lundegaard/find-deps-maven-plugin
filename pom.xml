@@ -4,7 +4,7 @@
 
     <groupId>eu.lundegaard.maven</groupId>
     <artifactId>find-deps-maven-plugin</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>maven-plugin</packaging>
 
     <name>Find Dependencies Maven Plugin (${project.packaging})</name>
@@ -260,9 +260,7 @@
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <gitDescribe>
-                        <always>true</always>
-                        <dirty>-dirty</dirty>
-                        <abbrev>15</abbrev>
+                        <skip>true</skip>
                     </gitDescribe>
                 </configuration>
             </plugin>
