@@ -260,9 +260,7 @@
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <gitDescribe>
-                        <always>true</always>
-                        <dirty>-dirty</dirty>
-                        <abbrev>15</abbrev>
+                        <skip>true</skip>
                     </gitDescribe>
                 </configuration>
             </plugin>
