@@ -22,7 +22,6 @@ import org.apache.maven.model.Repository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -48,7 +47,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
         requiresDependencyResolution = ResolutionScope.TEST)
 public class FindDepsMojo extends AbstractMojo {
 
-    private static final String ENCODING_UTF8 = "UTF-8";
     private static final Logger LOG = LoggerFactory.getLogger(FindDepsMojo.class);
 
     /**
@@ -72,12 +70,12 @@ public class FindDepsMojo extends AbstractMojo {
 
             doExecute();
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new MojoFailureException("Error while running plugin.", e);
         }
     }
 
-    private void doExecute() throws IOException, InterruptedException {
+    private void doExecute() throws IOException {
         if (project.toString().equals(session.getTopLevelProject().toString())) {
             List<MavenProject> allProjects = session.getAllProjects();
 
