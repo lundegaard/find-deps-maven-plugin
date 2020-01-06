@@ -58,12 +58,6 @@ public class FindDepsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
-    /**
-     * Contains the full list of projects in the reactor.
-     */
-    @Parameter(defaultValue = "${reactorProjects}", readonly = true, required = true)
-    private List<MavenProject> reactorProjects;
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
