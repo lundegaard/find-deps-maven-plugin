@@ -211,6 +211,20 @@ public class FindDepsMojo extends AbstractMojo {
             sb.append("            <version>").append(dependency.getVersion()).append("</version>\n");
             sb.append("        </dependency>\n");
         }
+        for (Plugin plugin : plugins) {
+            sb.append("        <dependency>\n");
+            sb.append("            <groupId>").append(plugin.getGroupId()).append("</groupId>\n");
+            sb.append("            <artifactId>").append(plugin.getArtifactId()).append("</artifactId>\n");
+            sb.append("            <version>").append(plugin.getVersion()).append("</version>\n");
+            sb.append("        </dependency>\n");
+            for (Dependency dependency : plugin.getDependencies()) {
+                sb.append("        <dependency>\n");
+                sb.append("            <groupId>").append(dependency.getGroupId()).append("</groupId>\n");
+                sb.append("            <artifactId>").append(dependency.getArtifactId()).append("</artifactId>\n");
+                sb.append("            <version>").append(dependency.getVersion()).append("</version>\n");
+                sb.append("        </dependency>\n");
+            }
+        }
         sb.append("    </dependencies>\n");
 
         sb.append("    <build>\n");
