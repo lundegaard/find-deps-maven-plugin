@@ -14,6 +14,10 @@
  */
 package eu.lundegaard.maven.finddeps;
 
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
@@ -22,6 +26,7 @@ import org.apache.maven.model.Repository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -30,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +51,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @Mojo(
         name = "find-deps",
+        defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
         requiresDependencyResolution = ResolutionScope.TEST)
 public class FindDepsMojo extends AbstractMojo {
 
@@ -66,11 +74,15 @@ public class FindDepsMojo extends AbstractMojo {
 
         } catch (IOException e) {
             throw new MojoFailureException("Error while running plugin.", e);
+        } catch (TemplateException te) {
+            throw new MojoExecutionException("Error while running plugin.", te);
         }
     }
 
-    private void doExecute() throws IOException {
-        if (project.toString().equals(session.getTopLevelProject().toString())) {
+    private void doExecute() throws IOException, TemplateException {
+        MavenProject topLevelProject = findTopLevelProject(session.getTopLevelProject());
+
+        if (project.toString().equals(topLevelProject.toString())) {
             List<MavenProject> allProjects = session.getAllProjects();
 
             List<Repository> repositories = gatherRepositories(allProjects);
@@ -89,7 +101,7 @@ public class FindDepsMojo extends AbstractMojo {
             LOG.info("Dependencies count: {}", dependencies.size());
             LOG.info("Plugins count: {}", buildPlugins.size());
         } else {
-            LOG.info("Not top-level project - skipping.");
+            LOG.info("Not a top-level project - skipping.");
         }
     }
 
@@ -128,138 +140,49 @@ public class FindDepsMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+    private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     private String producePom(List<Repository> repositories, List<Repository> pluginRepositories,
-            List<Dependency> dependencies, List<Plugin> plugins) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<project xmlns=\"http://maven.apache.org/POM/4.0.0\" ")
-                .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ")
-                .append("xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 ")
-                .append("http://maven.apache.org/maven-v4_0_0.xsd\">\n");
-        sb.append("    <modelVersion>4.0.0</modelVersion>\n");
-        sb.append("    <groupId>").append(project.getGroupId()).append("</groupId>\n");
-        sb.append("    <artifactId>").append(project.getArtifactId()).append("-dependencies</artifactId>\n");
-        sb.append("    <version>").append(project.getVersion()).append("</version>\n");
-        sb.append("    <packaging>jar</packaging>\n");
-        sb.append("    <name>").append(project.getName()).append(" [Dependencies]</name>\n");
-        sb.append("    <description>Dependencies POM for the '")
-                .append(project.getName())
-                .append("'. Use it together with `mvn dependency:go-offline`.</description>\n");
+            List<Dependency> dependencies, List<Plugin> plugins) throws IOException, TemplateException {
 
-        if (!repositories.isEmpty()) {
-            sb.append("    <repositories>\n");
-            for (Repository repository : repositories) {
-                sb.append("        <repository>\n");
-                sb.append("            <id>").append(repository.getId()).append("</id>\n");
-                sb.append("            <name>").append(repository.getName()).append("</name>\n");
-                sb.append("            <url>").append(repository.getUrl()).append("</url>\n");
-                if (repository.getReleases() != null && repository.getReleases().getEnabled() != null) {
-                    sb.append("            <releases>\n");
-                    sb.append("                <enabled>")
-                            .append(repository.getReleases().getEnabled())
-                            .append("</enabled>\n");
-                    sb.append("            </releases>\n");
-                }
-                if (repository.getSnapshots() != null && repository.getSnapshots().getEnabled() != null) {
-                    sb.append("            <snapshots>\n");
-                    sb.append("                <enabled>")
-                            .append(repository.getSnapshots().getEnabled())
-                            .append("</enabled>\n");
-                    sb.append("            </snapshots>\n");
-                }
-                sb.append("        </repository>\n");
-            }
-            sb.append("    </repositories>\n");
-        }
+        Configuration freemarkerConfiguration = new Configuration(Configuration.VERSION_2_3_29);
+        freemarkerConfiguration.setClassForTemplateLoading(this.getClass(), "/templates");
+        freemarkerConfiguration.setDefaultEncoding("UTF-8");
+        freemarkerConfiguration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        freemarkerConfiguration.setLogTemplateExceptions(false);
+        freemarkerConfiguration.setWrapUncheckedExceptions(true);
+        freemarkerConfiguration.setFallbackOnNullLoopVariable(false);
+        freemarkerConfiguration.setWhitespaceStripping(true);
 
-        if (!pluginRepositories.isEmpty()) {
-            sb.append("    <pluginRepositories>\n");
-            for (Repository repository : pluginRepositories) {
-                sb.append("        <pluginRepository>\n");
-                sb.append("            <id>").append(repository.getId()).append("</id>\n");
-                sb.append("            <name>").append(repository.getName()).append("</name>\n");
-                sb.append("            <url>").append(repository.getUrl()).append("</url>\n");
-                if (repository.getReleases() != null && repository.getReleases().getEnabled() != null) {
-                    sb.append("            <releases>\n");
-                    sb.append("                <enabled>")
-                            .append(repository.getReleases().getEnabled())
-                            .append("</enabled>\n");
-                    sb.append("            </releases>\n");
-                }
-                if (repository.getSnapshots() != null && repository.getSnapshots().getEnabled() != null) {
-                    sb.append("            <snapshots>\n");
-                    sb.append("                <enabled>")
-                            .append(repository.getSnapshots().getEnabled())
-                            .append("</enabled>\n");
-                    sb.append("            </snapshots>\n");
-                }
-                sb.append("        </pluginRepository>\n");
-            }
-            sb.append("    </pluginRepositories>\n");
-        }
+        Map<String, Object> freemarkerData = new HashMap<>();
+        freemarkerData.put("project", project);
+        freemarkerData.put("repositories", repositories);
+        freemarkerData.put("pluginRepositories", pluginRepositories);
+        freemarkerData.put("dependencies", dependencies);
+        freemarkerData.put("plugins", plugins);
 
-        sb.append("    <dependencies>\n");
-        for (Dependency dependency : dependencies) {
-            sb.append("        <dependency>\n");
-            sb.append("            <groupId>").append(dependency.getGroupId()).append("</groupId>\n");
-            sb.append("            <artifactId>").append(dependency.getArtifactId()).append("</artifactId>\n");
-            sb.append("            <version>").append(dependency.getVersion()).append("</version>\n");
-            sb.append("        </dependency>\n");
-        }
-        for (Plugin plugin : plugins) {
-            sb.append("        <dependency>\n");
-            sb.append("            <groupId>").append(plugin.getGroupId()).append("</groupId>\n");
-            sb.append("            <artifactId>").append(plugin.getArtifactId()).append("</artifactId>\n");
-            sb.append("            <version>").append(plugin.getVersion()).append("</version>\n");
-            sb.append("        </dependency>\n");
-            for (Dependency dependency : plugin.getDependencies()) {
-                sb.append("        <dependency>\n");
-                sb.append("            <groupId>").append(dependency.getGroupId()).append("</groupId>\n");
-                sb.append("            <artifactId>").append(dependency.getArtifactId()).append("</artifactId>\n");
-                sb.append("            <version>").append(dependency.getVersion()).append("</version>\n");
-                sb.append("        </dependency>\n");
-            }
-        }
-        sb.append("    </dependencies>\n");
+        Template template = freemarkerConfiguration.getTemplate("pom-dependencies.xml.ftl");
 
-        sb.append("    <build>\n");
-        sb.append("        <plugins>\n");
-        for (Plugin plugin : plugins) {
-            List<Dependency> pluginDependencies = plugin.getDependencies();
-            sb.append("            <plugin>\n");
-            sb.append("                <groupId>").append(plugin.getGroupId()).append("</groupId>\n");
-            sb.append("                <artifactId>").append(plugin.getArtifactId()).append("</artifactId>\n");
-            sb.append("                <version>").append(plugin.getVersion()).append("</version>\n");
-            if (!pluginDependencies.isEmpty()) {
-                sb.append("                <dependencies>\n");
-                for (Dependency dependency : pluginDependencies) {
-                    sb.append("                    <dependency>\n");
-                    sb.append("                        <groupId>")
-                            .append(dependency.getGroupId())
-                            .append("</groupId>\n");
-                    sb.append("                        <artifactId>")
-                            .append(dependency.getArtifactId())
-                            .append("</artifactId>\n");
-                    sb.append("                        <version>")
-                            .append(dependency.getVersion())
-                            .append("</version>\n");
-                    sb.append("                    </dependency>\n");
-                }
-                sb.append("                </dependencies>\n");
-            }
-            sb.append("            </plugin>\n");
-        }
-        sb.append("        </plugins>\n");
-        sb.append("    </build>\n");
-        sb.append("</project>\n");
+        StringWriter output = new StringWriter();
+        template.process(freemarkerData, output);
 
-        return sb.toString();
+        return output.toString();
     }
 
-
+    private MavenProject findTopLevelProject(MavenProject givenProject) {
+        MavenProject parentProject = givenProject.getParent();
+        if (parentProject == null) {
+            return givenProject;
+        } else {
+            File parentProjectDir = parentProject.getBasedir();
+            if (parentProjectDir == null) {
+                return givenProject;
+            } else {
+                return findTopLevelProject(parentProject);
+            }
+        }
+    }
 }

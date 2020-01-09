@@ -4,7 +4,7 @@
 
     <groupId>eu.lundegaard.maven</groupId>
     <artifactId>find-deps-maven-plugin</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <packaging>maven-plugin</packaging>
 
     <name>Find Dependencies Maven Plugin (${project.packaging})</name>
@@ -56,6 +56,11 @@
             <artifactId>maven-plugin-annotations</artifactId>
             <version>${mavenVersion}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <version>2.3.29</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
