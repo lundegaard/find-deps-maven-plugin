@@ -78,7 +78,9 @@ public class FindDepsMojo extends AbstractMojo {
     }
 
     private void doExecute() throws IOException, TemplateException {
-        if (project.toString().equals(session.getTopLevelProject().toString())) {
+        MavenProject topLevelProject = findTopLevelProject(session.getTopLevelProject());
+
+        if (project.toString().equals(topLevelProject.toString())) {
             List<MavenProject> allProjects = session.getAllProjects();
 
             List<Repository> repositories = gatherRepositories(allProjects);
@@ -97,7 +99,7 @@ public class FindDepsMojo extends AbstractMojo {
             LOG.info("Dependencies count: {}", dependencies.size());
             LOG.info("Plugins count: {}", buildPlugins.size());
         } else {
-            LOG.info("Not top-level project - skipping.");
+            LOG.info("Not a top-level project - skipping.");
         }
     }
 
@@ -136,7 +138,7 @@ public class FindDepsMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+    private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
@@ -166,5 +168,19 @@ public class FindDepsMojo extends AbstractMojo {
         template.process(freemarkerData, output);
 
         return output.toString();
+    }
+
+    private MavenProject findTopLevelProject(MavenProject givenProject) {
+        MavenProject parentProject = givenProject.getParent();
+        if (parentProject == null) {
+            return givenProject;
+        } else {
+            File parentProjectDir = parentProject.getBasedir();
+            if (parentProjectDir == null) {
+                return givenProject;
+            } else {
+                return findTopLevelProject(parentProject);
+            }
+        }
     }
 }
