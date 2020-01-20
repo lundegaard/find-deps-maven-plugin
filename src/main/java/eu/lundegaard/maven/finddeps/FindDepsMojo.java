@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +66,18 @@ public class FindDepsMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
+
+    @Parameter
+    private List<String> includeOnlyRepoIds = new ArrayList<>();
+
+    @Parameter
+    private List<String> includeOnlyRepoUrls = new ArrayList<>();
+
+    @Parameter
+    private List<String> excludedRepoIds = new ArrayList<>();
+
+    @Parameter
+    private List<String> excludedRepoUrls = new ArrayList<>();
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -119,6 +132,10 @@ public class FindDepsMojo extends AbstractMojo {
         return projects.stream()
                 .flatMap(p -> p.getRepositories().stream())
                 .distinct()
+                .filter(r -> includeOnlyRepoIds.contains(r.getId()))
+                .filter(r -> includeOnlyRepoUrls.contains(r.getUrl()))
+                .filter(r -> !excludedRepoIds.contains(r.getId()))
+                .filter(r -> !excludedRepoUrls.contains(r.getUrl()))
                 .collect(Collectors.toList());
     }
 
@@ -126,6 +143,10 @@ public class FindDepsMojo extends AbstractMojo {
         return projects.stream()
                 .flatMap(p -> p.getPluginRepositories().stream())
                 .distinct()
+                .filter(r -> includeOnlyRepoIds.contains(r.getId()))
+                .filter(r -> includeOnlyRepoUrls.contains(r.getUrl()))
+                .filter(r -> !excludedRepoIds.contains(r.getId()))
+                .filter(r -> !excludedRepoUrls.contains(r.getUrl()))
                 .collect(Collectors.toList());
     }
 
