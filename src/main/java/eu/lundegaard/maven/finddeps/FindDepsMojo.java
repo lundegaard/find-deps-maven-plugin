@@ -132,8 +132,8 @@ public class FindDepsMojo extends AbstractMojo {
         return projects.stream()
                 .flatMap(p -> p.getRepositories().stream())
                 .distinct()
-                .filter(r -> includeOnlyRepoIds.contains(r.getId()))
-                .filter(r -> includeOnlyRepoUrls.contains(r.getUrl()))
+                .filter(r -> includeOnlyRepoIds.isEmpty() || includeOnlyRepoIds.contains(r.getId()))
+                .filter(r -> includeOnlyRepoUrls.isEmpty() || includeOnlyRepoUrls.contains(r.getUrl()))
                 .filter(r -> !excludedRepoIds.contains(r.getId()))
                 .filter(r -> !excludedRepoUrls.contains(r.getUrl()))
                 .collect(Collectors.toList());
@@ -143,8 +143,8 @@ public class FindDepsMojo extends AbstractMojo {
         return projects.stream()
                 .flatMap(p -> p.getPluginRepositories().stream())
                 .distinct()
-                .filter(r -> includeOnlyRepoIds.contains(r.getId()))
-                .filter(r -> includeOnlyRepoUrls.contains(r.getUrl()))
+                .filter(r -> includeOnlyRepoIds.isEmpty() || includeOnlyRepoIds.contains(r.getId()))
+                .filter(r -> includeOnlyRepoUrls.isEmpty() || includeOnlyRepoUrls.contains(r.getUrl()))
                 .filter(r -> !excludedRepoIds.contains(r.getId()))
                 .filter(r -> !excludedRepoUrls.contains(r.getUrl()))
                 .collect(Collectors.toList());
