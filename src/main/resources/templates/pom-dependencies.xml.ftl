@@ -20,8 +20,12 @@
     <repositories>
         <#list repositories as repository>
         <repository>
+            <#if repository.id?has_content>
             <id>${repository.id}</id>
+            </#if>
+            <#if repository.name?has_content>
             <name>${repository.name}</name>
+            </#if>
             <url>${repository.url}</url>
             <#if repository.releases?has_content && repository.releases.getEnabled()?has_content>
             <releases>
@@ -42,8 +46,12 @@
     <pluginRepositories>
         <#list pluginRepositories as repository>
         <pluginRepository>
+            <#if repository.id?has_content>
             <id>${repository.id}</id>
+            </#if>
+            <#if repository.name?has_content>
             <name>${repository.name}</name>
+            </#if>
             <url>${repository.url}</url>
             <#if repository.releases?has_content && repository.releases.getEnabled()?has_content>
             <releases>
