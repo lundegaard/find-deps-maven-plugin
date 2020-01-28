@@ -97,3 +97,16 @@ Use `excludeRepoIds` or `excludeRepoUrls` configuration to exclude repos by repo
 </configuration>
 ```
 
+## Adding more artifacts
+
+Additional dependencies are handy when some artifacts are not resolved automatically by the plugin. This can be because it not mentioned directly in the POM (e. g. `maven-surefire-plugin` adds some dependencies dynamically based on used testing framework) or is preprocessed by Maven (e. g. dependencies with the `import` scope).
+
+The artifacts are added by their GAV coordinates in the format `groupId:artifactId:version[:type[:classifier]]`. The `type` and `classifier` are optional.
+
+```xml
+<configuration>
+    <additionalArtifacts>
+        <additionalArtifact>com.liferay.portal:release.portal.bom:7.2.0:pom</additionalArtifact>
+    </additionalArtifacts>
+</configuration>
+```

@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -79,13 +80,16 @@ public class FindDepsMojo extends AbstractMojo {
     @Parameter
     private List<String> excludedRepoUrls = new ArrayList<>();
 
+    @Parameter
+    private List<String> additionalArtifacts = new ArrayList<>();
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
 
             doExecute();
 
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new MojoFailureException("Error while running plugin.", e);
         } catch (TemplateException te) {
             throw new MojoExecutionException("Error while running plugin.", te);
@@ -100,8 +104,8 @@ public class FindDepsMojo extends AbstractMojo {
 
             List<Repository> repositories = gatherRepositories(allProjects);
             List<Repository> pluginRepositories = gatherPluginRepositories(allProjects);
-            List<Dependency> dependencies = gatherDependencies(allProjects);
             List<Plugin> buildPlugins = gatherBuildPlugins(allProjects);
+            List<Dependency> dependencies = gatherDependencies(allProjects, buildPlugins);
 
             String pom = producePom(repositories, pluginRepositories, dependencies, buildPlugins);
 
@@ -150,20 +154,58 @@ public class FindDepsMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    private List<Dependency> gatherDependencies(List<MavenProject> projects) {
-        return projects.stream()
-                .flatMap(p -> p.getDependencies().stream())
+    private List<Dependency> gatherDependencies(List<MavenProject> projects, List<Plugin> buildPlugins) {
+        Stream<Dependency> projectsDependenciesStream = projects.stream()
+                .flatMap(p -> p.getDependencies().stream());
+
+        Stream<Dependency> buildPluginsDependenciesStream = buildPlugins.stream()
+                .flatMap(p -> p.getDependencies().stream());
+
+        Stream<Dependency> additionalDependenciesStream = additionalArtifacts.stream()
+                .map(this::coordinatesToDependency);
+
+        return Stream.of(projectsDependenciesStream, buildPluginsDependenciesStream, additionalDependenciesStream)
+                .flatMap(s -> s)
                 .filter(dependency -> !dependency.getGroupId().equals(project.getGroupId()))
-                .filter(distinctByKey(d -> String.join(":", d.getGroupId(), d.getArtifactId(), d.getVersion())))
+                .filter(distinctByKey(d -> String.join(":", d.getGroupId(), d.getArtifactId(), d.getVersion(),
+                        d.getType(), d.getClassifier())))
                 .sorted(Comparator.comparing(Dependency::getGroupId)
                         .thenComparing(Dependency::getArtifactId)
-                        .thenComparing(Dependency::getVersion))
+                        .thenComparing(Dependency::getVersion)
+                        .thenComparing(Dependency::getType)
+                        .thenComparing(Dependency::getClassifier))
                 .collect(Collectors.toList());
     }
 
     private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
+    private Dependency coordinatesToDependency(String coordinates) {
+        String[] parts = coordinates.split(":");
+        switch (parts.length) {
+            case 3:
+                return createDependency(parts[0], parts[1], parts[2], "jar", null);
+            case 4:
+                return createDependency(parts[0], parts[1], parts[2], parts[3], null);
+            case 5:
+                return createDependency(parts[0], parts[1], parts[2], parts[3], parts[4]);
+            default:
+                throw new IllegalArgumentException("Unable to parse artifact coordinates: " + coordinates);
+        }
+    }
+
+    private Dependency createDependency(String groupId, String artifactId, String version, String type,
+            String classifier) {
+        Dependency dependency = new Dependency();
+        dependency.setGroupId(groupId);
+        dependency.setArtifactId(artifactId);
+        dependency.setVersion(version);
+        dependency.setType(type);
+        dependency.setClassifier(classifier);
+        dependency.setScope("compile");
+        return dependency;
     }
 
     private String producePom(List<Repository> repositories, List<Repository> pluginRepositories,
