@@ -95,25 +95,42 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <#list plugins as plugin>
+                <plugin>
+                    <groupId>${plugin.groupId}</groupId>
+                    <artifactId>${plugin.artifactId}</artifactId>
+                    <version>${plugin.version}</version>
+                    <#if plugin.dependencies?has_content>
+                    <dependencies>
+                        <#list plugin.dependencies as dependency>
+                        <dependency>
+                            <groupId>${dependency.groupId}</groupId>
+                            <artifactId>${dependency.artifactId}</artifactId>
+                            <version>${dependency.version}</version>
+                            <#if dependency.type?has_content && dependency.type != "jar">
+                            <type>${dependency.type}</type>
+                            </#if>
+                            <#if dependency.classifier?has_content>
+                            <classifier>${dependency.classifier}</classifier>
+                            </#if>
+                        </dependency>
+                        </#list>
+                    </dependencies>
+                    </#if>
+                </plugin>
+                </#list>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
-        <#list plugins as plugin>
+            <#list plugins as plugin>
             <plugin>
                 <groupId>${plugin.groupId}</groupId>
                 <artifactId>${plugin.artifactId}</artifactId>
-                <version>${plugin.version}</version>
-                <#if plugin.dependencies?has_content>
-                <dependencies>
-                    <#list plugin.dependencies as dependency>
-                    <dependency>
-                        <groupId>${dependency.groupId}</groupId>
-                        <artifactId>${dependency.artifactId}</artifactId>
-                        <version>${dependency.version}</version>
-                    </dependency>
-                    </#list>
-                </dependencies>
-                </#if>
             </plugin>
-        </#list>
+            </#list>
         </plugins>
     </build>
 </project>
