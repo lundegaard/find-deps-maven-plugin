@@ -75,6 +75,12 @@
             <groupId>${dependency.groupId}</groupId>
             <artifactId>${dependency.artifactId}</artifactId>
             <version>${dependency.version}</version>
+            <#if dependency.type?has_content && dependency.type != "jar">
+            <type>${dependency.type}</type>
+            </#if>
+            <#if dependency.classifier?has_content>
+            <classifier>${dependency.classifier}</classifier>
+            </#if>
         </dependency>
         </#list>
 
@@ -85,14 +91,6 @@
             <artifactId>${plugin.artifactId}</artifactId>
             <version>${plugin.version}</version>
         </dependency>
-        <#-- And plugins' dependencies -->
-        <#list plugin.dependencies as dependency>
-        <dependency>
-            <groupId>${dependency.groupId}</groupId>
-            <artifactId>${dependency.artifactId}</artifactId>
-            <version>${dependency.version}</version>
-        </dependency>
-        </#list>
         </#list>
     </dependencies>
 

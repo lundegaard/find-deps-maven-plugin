@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -100,8 +101,8 @@ public class FindDepsMojo extends AbstractMojo {
 
             List<Repository> repositories = gatherRepositories(allProjects);
             List<Repository> pluginRepositories = gatherPluginRepositories(allProjects);
-            List<Dependency> dependencies = gatherDependencies(allProjects);
             List<Plugin> buildPlugins = gatherBuildPlugins(allProjects);
+            List<Dependency> dependencies = gatherDependencies(allProjects, buildPlugins);
 
             String pom = producePom(repositories, pluginRepositories, dependencies, buildPlugins);
 
@@ -150,9 +151,14 @@ public class FindDepsMojo extends AbstractMojo {
                 .collect(Collectors.toList());
     }
 
-    private List<Dependency> gatherDependencies(List<MavenProject> projects) {
-        return projects.stream()
-                .flatMap(p -> p.getDependencies().stream())
+    private List<Dependency> gatherDependencies(List<MavenProject> projects, List<Plugin> buildPlugins) {
+        Stream<Dependency> projectsDependencyStream = projects.stream()
+                .flatMap(p -> p.getDependencies().stream());
+
+        Stream<Dependency> buildPluginsDependencyStream = buildPlugins.stream()
+                .flatMap(p -> p.getDependencies().stream());
+
+        return Stream.concat(projectsDependencyStream, buildPluginsDependencyStream)
                 .filter(dependency -> !dependency.getGroupId().equals(project.getGroupId()))
                 .filter(distinctByKey(d -> String.join(":", d.getGroupId(), d.getArtifactId(), d.getVersion())))
                 .sorted(Comparator.comparing(Dependency::getGroupId)
