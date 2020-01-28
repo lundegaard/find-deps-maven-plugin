@@ -69,7 +69,7 @@
     </#if>
 
     <dependencies>
-        <#-- Standard dependencies -->
+        <!-- Standard dependencies & plugin dependencies -->
         <#list dependencies as dependency>
         <dependency>
             <groupId>${dependency.groupId}</groupId>
@@ -77,7 +77,8 @@
             <version>${dependency.version}</version>
         </dependency>
         </#list>
-        <#-- Plugins as dependencies -->
+
+        <!-- Plugins as dependencies -->
         <#list plugins as plugin>
         <dependency>
             <groupId>${plugin.groupId}</groupId>
